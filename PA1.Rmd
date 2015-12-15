@@ -1,0 +1,46 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+Note: the data for this analysis was downloaded by forking [this GitHub repository](http://github.com/rdpeng/RepData_PeerAssessment1)
+
+```{r packages, results="hide"}
+# These libaries are used
+library(dplyr)
+```
+
+
+## Loading and preprocessing the data
+```{r "loading data"}
+if (!file.exists("activity.csv")) {
+    unzip("activity.zip")
+}
+activityData <- read.csv("activity.csv")
+```
+
+## What is mean total number of steps taken per day?
+```{r question1}
+dailyTotal <- summarise(group_by(activityData, date), steps=sum(steps, na.rm = TRUE))
+hist(dailyTotal$steps, breaks=10, xlab="total daily steps", main="Histogram of total daily steps")
+summarise(dailyTotal, mean=mean(steps), median=median(steps))
+```
+
+## What is the average daily activity pattern?
+```{r question2}
+intervalAverage <- summarise(group_by(activityData, interval), steps=mean(steps, na.rm = TRUE))
+with(intervalAverage, plot(interval, steps, type="l", main="Average number of steps per 5 minute interval accross all days"))
+maximumValue <- max(intervalAverage$steps)
+filter(intervalAverage, steps==maximumValue)
+```
+
+
+## Imputing missing values
+replaceNA <- function(i, s) {
+    if (is.na(s)) filter(intervalAverage, interval==i)$steps else s
+}
+cleanedData <- mutate(activityData, steps=replaceNA(interval, steps))
+
+
+## Are there differences in activity patterns between weekdays and weekends?
