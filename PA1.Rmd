@@ -31,16 +31,36 @@ summarise(dailyTotal, mean=mean(steps), median=median(steps))
 ```{r question2}
 intervalAverage <- summarise(group_by(activityData, interval), steps=mean(steps, na.rm = TRUE))
 with(intervalAverage, plot(interval, steps, type="l", main="Average number of steps per 5 minute interval accross all days"))
-maximumValue <- max(intervalAverage$steps)
-filter(intervalAverage, steps==maximumValue)
+intervalAverage[which.max(intervalAverage$steps), ]
 ```
 
 
 ## Imputing missing values
-replaceNA <- function(i, s) {
-    if (is.na(s)) filter(intervalAverage, interval==i)$steps else s
-}
-cleanedData <- mutate(activityData, steps=replaceNA(interval, steps))
+```{r question3}
+missingValueCount <- nrow(activityData[is.na(activityData$steps),])
+print(missingValueCount)
+
+# fill in the missing values with the average value of the same interval
+activityData$steps2 <- activityData$steps
+blankRows <- is.na(activityData$steps)
+matchingInterval <- match(activityData$interval[blankRows], intervalAverage$interval)
+activityData$steps2[blankRows] <- intervalAverage$steps[matchingInterval]
+activityData2 <- select(activityData, steps=steps2, date, interval)
+dailyTotal2 <- summarise(group_by(activityData2, date), steps=sum(steps))
+hist(dailyTotal2$steps, breaks=10, xlab="total daily steps", main="Histogram of total daily steps (NA's replaced with interval average)")
+
+# Mean and Media ignoring NA's
+summary1 <- summarise(dailyTotal, mean=mean(steps), median=median(steps))
+print (summary1)
+
+# Mean and median with NA's replaced
+summary2 <- summarise(dailyTotal2, mean=mean(steps), median=median(steps))
+print (summary2)
+
+# What is the impact (in percent)?
+(summary2-summary1)/summary2*100
+```
+
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
